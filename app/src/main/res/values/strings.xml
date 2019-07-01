@@ -21,4 +21,5 @@
     <string name="preferences">Preferences</string>
     <string name="settings">Settings</string>
     <string name="title_activity_settings">Settings</string>
+    <string name="activate_help">Help in solving</string>
 </resources>
