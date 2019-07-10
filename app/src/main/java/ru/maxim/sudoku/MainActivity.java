@@ -17,8 +17,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Button start = findViewById(R.id.start_new_game);
+        Button list = findViewById(R.id.unfinishedBtn);
         start.setOnClickListener(this);
-        Button settings = findViewById(R.id.menu_settings);
+        list.setOnClickListener(this);
         setSupportActionBar((Toolbar) findViewById(R.id.toolbar_main));
     }
 
@@ -32,7 +33,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()){
             case R.id.menu_settings:
-                startActivity(new Intent(this, SettingsActivity.class));
+                startActivity(new Intent(this, PreferencesActivity.class));
                 break;
         }
         return true;
@@ -43,6 +44,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         switch (v.getId()){
             case R.id.start_new_game:
                 startActivity(new Intent(this, SudokuActivity.class));
+                break;
+            case R.id.unfinishedBtn:
+                startActivity(new Intent(this, ListActivity.class));
                 break;
         }
 

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory android:title="@string/game_settings">
+        <CheckBoxPreference
+            android:title="Help"
+            android:defaultValue="false"
+            android:summary="Help in game"
+            android:key="help" />
+        <ListPreference
+            android:title="Spaces count"
+            android:summary="Count of empty cells on field"
+            android:key="spacesCount"
+            android:defaultValue="15"
+            android:entries="@array/spacesCountEntries"
+            android:entryValues="@array/spacesCountValues" />
+    </PreferenceCategory>
+</PreferenceScreen>

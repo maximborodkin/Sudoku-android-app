@@ -1,6 +1,11 @@
 package ru.maxim.sudoku;
 
+import android.content.ContentValues;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -12,15 +17,24 @@ import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.Toast;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.Objects;
+import ru.maxim.sudoku.data.DBHelper;
+import ru.maxim.sudoku.data.SudokuContract;
 
 public class SudokuActivity extends AppCompatActivity implements View.OnClickListener {
 
-    private int[][] sudoku;
+    private int[][] sudoku = new int[9][9];
+    private Sudoku currentSudoku;
     private Button currentBtn;
     SudokuGenerator sg;
     private Button scBtnCurrent;
-    private int spacesCount = 15;
+    private int spacesCount;
     private boolean isSolved = false;
+    DBHelper dbHelper;
+    static SQLiteDatabase db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,22 +73,106 @@ public class SudokuActivity extends AppCompatActivity implements View.OnClickLis
         scBtn20.setOnClickListener(this);
         scBtn25.setOnClickListener(this);
         newGame.setOnClickListener(this);
-        setSC(15, scBtn15.getId());
-        startGame();
+        dbHelper = new DBHelper(this);
+        db = dbHelper.getWritableDatabase();
+        spacesCount = Integer.parseInt(
+                Objects.requireNonNull(
+                        PreferenceManager.getDefaultSharedPreferences(
+                                getBaseContext()
+                        ).getString("spacesCount", "15"))
+        );
+        //setSC(15, scBtn15.getId());
+        Intent intent = getIntent();
+        if (intent.hasExtra("sudoku_hash")) {
+            resumeGame((int) Objects.requireNonNull(intent.getExtras()).get("sudoku_hash"));
+        }
+        else{
+            if (currentSudoku == null) startGame();
+            else resumeGame(currentSudoku.hashCode());
+        }
+    }
+
+    public void addSudoku (Sudoku sudoku){
+        int hashCode = sudoku.hashCode();
+        String original_field = Sudoku.getJSONArray(sudoku.getOriginal_field());
+        String modyfied_field = Sudoku.getJSONArray(sudoku.getModyfied_field());
+        String creation_date = sudoku.getCreation_date();
+        String last_modify_date = sudoku.getLast_modify_date();
+
+        ContentValues values = new ContentValues();
+        values.put(SudokuContract.SudokuEntry.COLUMN_HASH, hashCode);
+        values.put(SudokuContract.SudokuEntry.ORIGINAL_FIELD, original_field);
+        values.put(SudokuContract.SudokuEntry.MODYFIED_FIELD, modyfied_field);
+        values.put(SudokuContract.SudokuEntry.CREATION_DATE, creation_date);
+        values.put(SudokuContract.SudokuEntry.LAST_MODIFY_DATE, last_modify_date);
+        db.insert(SudokuContract.SudokuEntry.TABLE_NAME, null, values);
+    }
+
+    public void updateSudoku(Sudoku newSudoku){
+        ContentValues cv = new ContentValues();
+        cv.put(SudokuContract.SudokuEntry.MODYFIED_FIELD, Sudoku.getJSONArray(newSudoku.getModyfied_field()));
+        cv.put(SudokuContract.SudokuEntry.LAST_MODIFY_DATE, newSudoku.getLast_modify_date());
+        db.update(SudokuContract.SudokuEntry.TABLE_NAME, cv, SudokuContract.SudokuEntry.COLUMN_HASH + " = ?", new String[]{String.valueOf(newSudoku.hashCode())});
+    }
+
+    @Override
+    protected void onDestroy() {
+        currentSudoku.setModyfied_field(sudoku);
+        currentSudoku.setLast_modify_date(SimpleDateFormat.getDateTimeInstance().format(new Date()));
+        updateSudoku(currentSudoku);
+        super.onDestroy();
+    }
+
+    public void deleteSudoku(int hashCode){
+        db.delete(SudokuContract.SudokuEntry.TABLE_NAME, "hash = " + hashCode, null);
     }
 
     private void startGame(){
+        Toast.makeText(this, "start", Toast.LENGTH_SHORT).show();
         sg = new SudokuGenerator(spacesCount);
-        sudoku = sg.getSudoku();
+        currentSudoku = new Sudoku(sg.getSudoku());
+        for (int i = 0; i < sudoku.length; i++) {
+            sudoku[i] = Arrays.copyOfRange(currentSudoku.getModyfied_field()[i], 0, currentSudoku.getModyfied_field()[i].length);
+        }
         isSolved = false;
-        drawGrid(sudoku);
+        drawGrid();
         setClickable(true);
+        addSudoku(new Sudoku(sudoku));
+    }
+
+    private void resumeGame(int old_game_hash){
+        // find target sudoku in db
+        Toast.makeText(this, "resume", Toast.LENGTH_SHORT).show();
+        Cursor cursor = db.query(
+                SudokuContract.SudokuEntry.TABLE_NAME,
+                null,
+                SudokuContract.SudokuEntry.COLUMN_HASH + " = ?",
+                new String[]{String.valueOf(old_game_hash)},
+                null,
+                null,
+                null
+        );
+        cursor.moveToFirst();
+        String original_field = cursor.getString(cursor.getColumnIndex(SudokuContract.SudokuEntry.ORIGINAL_FIELD));
+        String modyfied_field = cursor.getString(cursor.getColumnIndex(SudokuContract.SudokuEntry.MODYFIED_FIELD));
+        String creation_date = cursor.getString(cursor.getColumnIndex(SudokuContract.SudokuEntry.CREATION_DATE));
+        String last_modify_date = cursor.getString(cursor.getColumnIndex(SudokuContract.SudokuEntry.LAST_MODIFY_DATE));
+        cursor.close();
+        currentSudoku = new Sudoku(Sudoku.getArray(original_field), Sudoku.getArray(modyfied_field), creation_date, last_modify_date);
+        for (int i = 0; i < sudoku.length; i++) {
+            sudoku[i] = Arrays.copyOf(currentSudoku.getModyfied_field()[i], currentSudoku.getModyfied_field()[i].length);
+        }
+        // draw new field on Activity
+        setClickable(true);
+        drawGrid();
+        // ФЗЩОУККЦЗЩК4З5
     }
 
     private void congrats(){
         Toast.makeText(this, getString(R.string.congrats), Toast.LENGTH_SHORT).show();
         isSolved = true;
         setClickable(false);
+        deleteSudoku(currentSudoku.hashCode());
     }
 
     private void setClickable(boolean clickable){
@@ -105,11 +203,13 @@ public class SudokuActivity extends AppCompatActivity implements View.OnClickLis
         }
     }
 
-    private void drawGrid(int[][] mat){
+    private void drawGrid(){
         TableLayout parent = findViewById(R.id.parent_layout);
         parent.removeAllViews();
         TableRow row;
         Button btn;
+        int[][] original_field = currentSudoku.getOriginal_field();
+        int[][] modyfied_field = currentSudoku.getModyfied_field();
 
         for (int i = 0; i < 9; i++) {
             row = new TableRow(this);
@@ -126,15 +226,15 @@ public class SudokuActivity extends AppCompatActivity implements View.OnClickLis
                         TableRow.LayoutParams.WRAP_CONTENT,
                         1.0f);
                 btn.setLayoutParams(params);
-                if (mat[i][j] == 0){
-                    btn.setText("");
-                    btn.setClickable(true);
-                    btn.setBackgroundResource(R.drawable.clickable_grid_button);
-                    btn.setOnClickListener(this);
-                }else{
-                    btn.setText(String.valueOf(mat[i][j]));
-                    btn.setClickable(false);
+                if (original_field[i][j] != 0){
+                    btn.setText(String.valueOf(original_field[i][j]));
                     btn.setBackgroundResource(R.drawable.unclickable_grid_button);
+                    btn.setClickable(false);
+                }else{
+                    btn.setText((modyfied_field[i][j] == 0)? "" : String.valueOf(modyfied_field[i][j]));
+                    btn.setBackgroundResource(R.drawable.clickable_grid_button);
+                    btn.setClickable(true);
+                    btn.setOnClickListener(this);
                 }
                 row.addView(btn);
                 if (j == 2 || j == 5){
@@ -180,7 +280,6 @@ public class SudokuActivity extends AppCompatActivity implements View.OnClickLis
         for (int i = rowStart; i < rowStart+3; i++) {
             for (int j = colStart; j < colStart+3; j++) {
                 if (sudoku[i][j] == digit && i != digit_i && j != digit_j){
-                    //Toast.makeText(this, "false in box " + sudoku[i][j] + " == " + digit + " on i:" + i + " and j:" + j , Toast.LENGTH_SHORT).show();
                     return false;
                 }
             }
@@ -191,7 +290,6 @@ public class SudokuActivity extends AppCompatActivity implements View.OnClickLis
     boolean useInRow(int row, int col,  int digit){
         for (int i = 0; i < 9; i++) {
             if (sudoku[row][i] == digit && i != col){
-                //Toast.makeText(this, "false in row " + sudoku[row][i] + " == " + digit + " on i:" + row + " and j:" + i , Toast.LENGTH_SHORT).show();
                 return false;
             }
         }
@@ -201,7 +299,6 @@ public class SudokuActivity extends AppCompatActivity implements View.OnClickLis
     boolean useInColumn(int row, int col, int digit){
         for (int i = 0; i < 9; i++) {
             if (sudoku[i][col] == digit && i != row){
-                //Toast.makeText(this, "false in column " + sudoku[i][col] + " == " + digit + " on i:" + i + " and j:" + col , Toast.LENGTH_SHORT).show();
                 return false;
             }
         }
