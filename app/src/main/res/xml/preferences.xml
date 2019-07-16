@@ -4,8 +4,13 @@
         <CheckBoxPreference
             android:title="Help"
             android:defaultValue="false"
-            android:summary="Help in game"
+            android:summary="Turns on highlight of matches"
             android:key="help" />
+        <CheckBoxPreference
+            android:title="Highlight"
+            android:defaultValue="false"
+            android:summary="Highlights row, column and square of current cell"
+            android:key="highlight" />
         <ListPreference
             android:title="Spaces count"
             android:summary="Count of empty cells on field"

@@ -2,7 +2,6 @@ package ru.maxim.sudoku;
 
 import android.content.ContentValues;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.preference.PreferenceManager;
@@ -25,13 +24,12 @@ import ru.maxim.sudoku.data.DBHelper;
 import ru.maxim.sudoku.data.SudokuContract;
 
 public class SudokuActivity extends AppCompatActivity implements View.OnClickListener {
-
     private int[][] sudoku = new int[9][9];
     private Sudoku currentSudoku;
     private Button currentBtn;
-    SudokuGenerator sg;
-    private Button scBtnCurrent;
     private int spacesCount;
+    private boolean isHelpEnabled;
+    private boolean isHighlightEnabled;
     private boolean isSolved = false;
     DBHelper dbHelper;
     static SQLiteDatabase db;
@@ -51,11 +49,6 @@ public class SudokuActivity extends AppCompatActivity implements View.OnClickLis
         Button btn7 = findViewById(R.id.btn7);
         Button btn8 = findViewById(R.id.btn8);
         Button btn9 = findViewById(R.id.btn9);
-        Button scBtn5 = findViewById(R.id.scBtn5);
-        Button scBtn10 = findViewById(R.id.scBtn10);
-        Button scBtn15 = findViewById(R.id.scBtn15);
-        Button scBtn20 = findViewById(R.id.scBtn20);
-        Button scBtn25 = findViewById(R.id.scBtn25);
         Button newGame = findViewById(R.id.newGameBtn);
         btn.setOnClickListener(this);
         btn1.setOnClickListener(this);
@@ -67,11 +60,6 @@ public class SudokuActivity extends AppCompatActivity implements View.OnClickLis
         btn7.setOnClickListener(this);
         btn8.setOnClickListener(this);
         btn9.setOnClickListener(this);
-        scBtn5.setOnClickListener(this);
-        scBtn10.setOnClickListener(this);
-        scBtn15.setOnClickListener(this);
-        scBtn20.setOnClickListener(this);
-        scBtn25.setOnClickListener(this);
         newGame.setOnClickListener(this);
         dbHelper = new DBHelper(this);
         db = dbHelper.getWritableDatabase();
@@ -81,15 +69,42 @@ public class SudokuActivity extends AppCompatActivity implements View.OnClickLis
                                 getBaseContext()
                         ).getString("spacesCount", "15"))
         );
-        //setSC(15, scBtn15.getId());
-        Intent intent = getIntent();
-        if (intent.hasExtra("sudoku_hash")) {
-            resumeGame((int) Objects.requireNonNull(intent.getExtras()).get("sudoku_hash"));
+        isHelpEnabled = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getBoolean("help", false);
+        isHighlightEnabled = PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getBoolean("highlight", false);
+        if (getLastCustomNonConfigurationInstance() != null){
+            currentSudoku = (Sudoku) getLastCustomNonConfigurationInstance();
+        }else if (getIntent().hasExtra("sudoku_hash")){
+            currentSudoku = findSudokuByHashcode((int) Objects.requireNonNull(getIntent().getExtras()).get("sudoku_hash"));
+        }else{
+            currentSudoku = new Sudoku(new SudokuGenerator(spacesCount).getSudoku());
+            addSudoku(currentSudoku);
         }
-        else{
-            if (currentSudoku == null) startGame();
-            else resumeGame(currentSudoku.hashCode());
-        }
+        startGame();
+    }
+
+    @Override
+    public Object onRetainCustomNonConfigurationInstance() {
+        super.onRetainCustomNonConfigurationInstance();
+        return currentSudoku;
+    }
+
+    public Sudoku findSudokuByHashcode(int hashCode){
+        Cursor cursor = db.query(
+                SudokuContract.SudokuEntry.TABLE_NAME,
+                null,
+                SudokuContract.SudokuEntry.COLUMN_HASH + " = ?",
+                new String[]{String.valueOf(hashCode)},
+                null,
+                null,
+                null
+        );
+        cursor.moveToFirst();
+        String original_field = cursor.getString(cursor.getColumnIndex(SudokuContract.SudokuEntry.ORIGINAL_FIELD));
+        String modyfied_field = cursor.getString(cursor.getColumnIndex(SudokuContract.SudokuEntry.MODYFIED_FIELD));
+        String creation_date = cursor.getString(cursor.getColumnIndex(SudokuContract.SudokuEntry.CREATION_DATE));
+        String last_modify_date = cursor.getString(cursor.getColumnIndex(SudokuContract.SudokuEntry.LAST_MODIFY_DATE));
+        cursor.close();
+        return new Sudoku(Sudoku.getArray(original_field), Sudoku.getArray(modyfied_field), creation_date, last_modify_date);
     }
 
     public void addSudoku (Sudoku sudoku){
@@ -128,43 +143,12 @@ public class SudokuActivity extends AppCompatActivity implements View.OnClickLis
     }
 
     private void startGame(){
-        Toast.makeText(this, "start", Toast.LENGTH_SHORT).show();
-        sg = new SudokuGenerator(spacesCount);
-        currentSudoku = new Sudoku(sg.getSudoku());
         for (int i = 0; i < sudoku.length; i++) {
-            sudoku[i] = Arrays.copyOfRange(currentSudoku.getModyfied_field()[i], 0, currentSudoku.getModyfied_field()[i].length);
+            sudoku[i] = Arrays.copyOf(currentSudoku.getModyfied_field()[i], currentSudoku.getModyfied_field()[i].length);
         }
         isSolved = false;
         drawGrid();
         setClickable(true);
-        addSudoku(new Sudoku(sudoku));
-    }
-
-    private void resumeGame(int old_game_hash){
-        // find target sudoku in db
-        Toast.makeText(this, "resume", Toast.LENGTH_SHORT).show();
-        Cursor cursor = db.query(
-                SudokuContract.SudokuEntry.TABLE_NAME,
-                null,
-                SudokuContract.SudokuEntry.COLUMN_HASH + " = ?",
-                new String[]{String.valueOf(old_game_hash)},
-                null,
-                null,
-                null
-        );
-        cursor.moveToFirst();
-        String original_field = cursor.getString(cursor.getColumnIndex(SudokuContract.SudokuEntry.ORIGINAL_FIELD));
-        String modyfied_field = cursor.getString(cursor.getColumnIndex(SudokuContract.SudokuEntry.MODYFIED_FIELD));
-        String creation_date = cursor.getString(cursor.getColumnIndex(SudokuContract.SudokuEntry.CREATION_DATE));
-        String last_modify_date = cursor.getString(cursor.getColumnIndex(SudokuContract.SudokuEntry.LAST_MODIFY_DATE));
-        cursor.close();
-        currentSudoku = new Sudoku(Sudoku.getArray(original_field), Sudoku.getArray(modyfied_field), creation_date, last_modify_date);
-        for (int i = 0; i < sudoku.length; i++) {
-            sudoku[i] = Arrays.copyOf(currentSudoku.getModyfied_field()[i], currentSudoku.getModyfied_field()[i].length);
-        }
-        // draw new field on Activity
-        setClickable(true);
-        drawGrid();
         // ФЗЩОУККЦЗЩК4З5
     }
 
@@ -263,13 +247,129 @@ public class SudokuActivity extends AppCompatActivity implements View.OnClickLis
     }
 
     private void setDigit(int digit){
+        int i, j;
         if (currentBtn != null) {
             currentBtn.setText((digit == 0) ? "" : String.valueOf(digit));
-            int i = ((currentBtn.getId()) - 300000) / 10;
-            int j = ((currentBtn.getId()) - 300000) % 10;
+            i = ((currentBtn.getId()) - 300000) / 10;
+            j = ((currentBtn.getId()) - 300000) % 10;
             sudoku[i][j] = digit;
+            if (isHighlightEnabled) {
+                removeHighlight();
+                highlightArea(i, j);
+            }
+            if (isHelpEnabled) highlightMatches(i, j, sudoku[i][j]);
             if (checkSolution()) {
                 congrats();
+            }
+        }
+    }
+
+    private void highlightArea(int digit_i, int digit_j) {
+        Button currentButton;
+
+        // Highlight column
+        for (int i = 0; i < 9; i++) {
+            currentButton = findViewById(300000 + digit_j + i*10);
+            currentButton.setBackgroundResource(
+                    currentSudoku.getOriginal_field()[i][digit_j] !=0 ?
+                            R.drawable.unclickable_grid_button_highlighted :
+                            R.drawable.clickable_grid_button_highlighted
+            );
+        }
+
+        // Highlight row
+        for (int j = 0; j < 9; j++) {
+            currentButton = findViewById(300000 + j + digit_i*10);
+            currentButton.setBackgroundResource(
+                    currentSudoku.getOriginal_field()[digit_i][j] !=0 ?
+                            R.drawable.unclickable_grid_button_highlighted :
+                            R.drawable.clickable_grid_button_highlighted
+            );
+        }
+
+        //Highlight square
+        int rowStart = (digit_i/3)*3;
+        int colStart = (digit_j/3)*3;
+        for (int i = rowStart; i < rowStart+3; i++) {
+            for (int j = colStart; j < colStart+3; j++) {
+                currentButton = findViewById(300000 + i*10 + j);
+                currentButton.setBackgroundResource(
+                        currentSudoku.getOriginal_field()[i][j] !=0 ?
+                                R.drawable.unclickable_grid_button_highlighted :
+                                R.drawable.clickable_grid_button_highlighted
+                );
+            }
+        }
+    }
+
+    private void highlightMatches(int digit_i, int digit_j, int digit){
+        if (digit == 0) return;
+        Button currentButton;
+        for (int i = 0; i < 9; i++) { //highlight
+            currentButton = findViewById(300000 + digit_j + i*10);
+            if (sudoku[i][digit_j] == digit)
+            currentButton.setBackgroundResource(
+                    currentSudoku.getOriginal_field()[i][digit_j] == 0 ?
+                            R.drawable.clickable_grid_button_matched :
+                            R.drawable.unclickable_grid_button_matched
+            );
+        }
+        for (int j = 0; j < 9; j++) {
+            currentButton = findViewById(300000 + j + digit_i*10);
+            if (sudoku[digit_i][j] == digit)
+            currentButton.setBackgroundResource(
+                    currentSudoku.getOriginal_field()[digit_i][j] == 0 ?
+                            R.drawable.clickable_grid_button_matched :
+                            R.drawable.unclickable_grid_button_matched
+            );
+        }
+
+        int rowStart = (digit_i/3)*3;
+        int colStart = (digit_j/3)*3;
+        for (int i = rowStart; i < rowStart+3; i++) {
+            for (int j = colStart; j < colStart+3; j++) {
+                currentButton = findViewById(300000 + i*10 + j);
+                if (sudoku[i][j] == digit)
+                currentButton.setBackgroundResource(
+                        currentSudoku.getOriginal_field()[i][j] == 0 ?
+                                R.drawable.clickable_grid_button_matched :
+                                R.drawable.unclickable_grid_button_matched
+                );
+            }
+        }
+        currentBtn.setBackgroundResource(R.drawable.current_grid_button);
+    }
+
+    private void removeHighlight() {
+        int digit_i = ((currentBtn.getId()) - 300000) / 10;
+        int digit_j = ((currentBtn.getId()) - 300000) % 10;
+        Button currentButton;
+        for (int i = 0; i < 9; i++) {
+            currentButton = findViewById(300000 + digit_j + i*10);
+            currentButton.setBackgroundResource(
+                    currentSudoku.getOriginal_field()[i][digit_j] !=0 ?
+                            R.drawable.unclickable_grid_button :
+                            R.drawable.clickable_grid_button
+            );
+        }
+        for (int j = 0; j < 9; j++) {
+            currentButton = findViewById(300000 + j + digit_i*10);
+            currentButton.setBackgroundResource(
+                    currentSudoku.getOriginal_field()[digit_i][j] != 0 ?
+                            R.drawable.unclickable_grid_button :
+                            R.drawable.clickable_grid_button
+            );
+        }
+        int rowStart = (digit_i/3)*3;
+        int colStart = (digit_j/3)*3;
+        for (int i = rowStart; i < rowStart+3; i++) {
+            for (int j = colStart; j < colStart+3; j++) {
+                currentButton = findViewById(300000 + i*10 + j);
+                currentButton.setBackgroundResource(
+                        currentSudoku.getOriginal_field()[i][j] !=0 ?
+                                R.drawable.unclickable_grid_button :
+                                R.drawable.clickable_grid_button
+                );
             }
         }
     }
@@ -359,21 +459,6 @@ public class SudokuActivity extends AppCompatActivity implements View.OnClickLis
             case R.id.btn9:
                 setDigit(9);
                 break;
-            case R.id.scBtn5:
-                setSC(1, v.getId());
-                break;
-            case R.id.scBtn10:
-                setSC(10, v.getId());
-                break;
-            case R.id.scBtn15:
-                setSC(15, v.getId());
-                break;
-            case R.id.scBtn20:
-                setSC(20, v.getId());
-                break;
-            case R.id.scBtn25:
-                setSC(25, v.getId());
-                break;
             case R.id.newGameBtn:
                 if (!isSolved) {
                     new AlertDialog.Builder(this)
@@ -383,6 +468,7 @@ public class SudokuActivity extends AppCompatActivity implements View.OnClickLis
                             .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
                                 @Override
                                 public void onClick(DialogInterface dialog, int which) {
+                                    currentSudoku = new Sudoku(new SudokuGenerator(spacesCount).getSudoku());
                                     startGame();
                                 }
                             })
@@ -393,25 +479,22 @@ public class SudokuActivity extends AppCompatActivity implements View.OnClickLis
                             })
                             .show();
                 }else{
+                    currentSudoku = new Sudoku(new SudokuGenerator(spacesCount).getSudoku());
                     startGame();
                 }
                 break;
             default:
                 if (currentBtn != null){
                     currentBtn.setBackgroundResource(R.drawable.clickable_grid_button);
+                    if (isHighlightEnabled || isHelpEnabled) removeHighlight();
                 }
                 currentBtn = findViewById(v.getId());
+                int digit_i = ((currentBtn.getId()) - 300000) / 10;
+                int digit_j = ((currentBtn.getId()) - 300000) % 10;
+                if (isHighlightEnabled) highlightArea(digit_i, digit_j);
+                if (isHelpEnabled) highlightMatches(digit_i, digit_j, sudoku[digit_i][digit_j]);
                 currentBtn.setBackgroundResource(R.drawable.current_grid_button);
                 break;
         }
-    }
-
-    private void setSC(int sc, int btnId) {
-        if (scBtnCurrent != null){
-            scBtnCurrent.setBackgroundResource(R.drawable.sc_button);
-        }
-        scBtnCurrent = findViewById(btnId);
-        scBtnCurrent.setBackgroundResource(R.drawable.sc_button_current);
-        spacesCount = sc;
     }
 }
