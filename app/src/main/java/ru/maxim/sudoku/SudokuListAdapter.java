@@ -56,12 +56,6 @@ public class SudokuListAdapter extends BaseAdapter {
         TableRow row;
         TextView cell;
         for (int i = 0; i < 9; i++) {
-            System.out.println(Arrays.toString(sudoku.getOriginal_field()[i]));
-        }
-        for (int i = 0; i < 9; i++) {
-            System.out.println(Arrays.toString(sudoku.getModyfied_field()[i]));
-        }
-        for (int i = 0; i < 9; i++) {
             row = new TableRow(ctx);
             base.addView(row);
             for (int j = 0; j < 9; j++) {

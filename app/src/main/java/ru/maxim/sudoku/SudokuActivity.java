@@ -2,6 +2,7 @@ package ru.maxim.sudoku;
 
 import android.content.ContentValues;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.preference.PreferenceManager;
@@ -50,6 +51,7 @@ public class SudokuActivity extends AppCompatActivity implements View.OnClickLis
         Button btn8 = findViewById(R.id.btn8);
         Button btn9 = findViewById(R.id.btn9);
         Button newGame = findViewById(R.id.newGameBtn);
+        Button resetField = findViewById(R.id.resetFieldBtn);
         btn.setOnClickListener(this);
         btn1.setOnClickListener(this);
         btn2.setOnClickListener(this);
@@ -61,6 +63,7 @@ public class SudokuActivity extends AppCompatActivity implements View.OnClickLis
         btn8.setOnClickListener(this);
         btn9.setOnClickListener(this);
         newGame.setOnClickListener(this);
+        resetField.setOnClickListener(this);
         dbHelper = new DBHelper(this);
         db = dbHelper.getWritableDatabase();
         spacesCount = Integer.parseInt(
@@ -140,6 +143,17 @@ public class SudokuActivity extends AppCompatActivity implements View.OnClickLis
 
     public void deleteSudoku(int hashCode){
         db.delete(SudokuContract.SudokuEntry.TABLE_NAME, "hash = " + hashCode, null);
+    }
+
+    private void resetField(){
+        for (int i = 0; i < sudoku.length; i++) {
+            sudoku[i] = Arrays.copyOf(currentSudoku.getOriginal_field()[i], currentSudoku.getOriginal_field()[i].length);
+        }
+        currentSudoku.setModyfied_field(sudoku);
+        updateSudoku(currentSudoku);
+        isSolved = false;
+        drawGrid();
+        setClickable(true);
     }
 
     private void startGame(){
@@ -469,6 +483,7 @@ public class SudokuActivity extends AppCompatActivity implements View.OnClickLis
                                 @Override
                                 public void onClick(DialogInterface dialog, int which) {
                                     currentSudoku = new Sudoku(new SudokuGenerator(spacesCount).getSudoku());
+                                    addSudoku(currentSudoku);
                                     startGame();
                                 }
                             })
@@ -481,6 +496,25 @@ public class SudokuActivity extends AppCompatActivity implements View.OnClickLis
                 }else{
                     currentSudoku = new Sudoku(new SudokuGenerator(spacesCount).getSudoku());
                     startGame();
+                }
+                break;
+            case R.id.resetFieldBtn:
+                if (!isSolved) {
+                    new AlertDialog.Builder(this)
+                            .setTitle(getString(R.string.reset_this_field))
+                            .setMessage(getString(R.string.are_ypu_sure))
+                            .setIcon(android.R.drawable.ic_dialog_alert)
+                            .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    resetField();
+                                }
+                            })
+                            .setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {}
+                            })
+                            .show();
                 }
                 break;
             default:

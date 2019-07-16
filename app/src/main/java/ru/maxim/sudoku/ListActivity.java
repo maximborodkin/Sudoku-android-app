@@ -129,7 +129,7 @@ public class ListActivity extends AppCompatActivity {
     }
 
 
-    private void fillList()  {
+    private void fillList() {
         Cursor cursor = db.query(SudokuContract.SudokuEntry.TABLE_NAME, null, null, null, null, null, null);
         sudokus = new ArrayList<>();
         while (cursor.moveToNext()){

@@ -30,4 +30,6 @@
     <string name="delete">Delete</string>
     <string name="game_settings">Game settings</string>
     <string name="delete_all_fields">Delete all fields?</string>
+    <string name="reset_field">Reset field</string>
+    <string name="reset_this_field">Reset this field?</string>
 </resources>

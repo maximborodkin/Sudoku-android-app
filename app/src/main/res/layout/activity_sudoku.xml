@@ -111,18 +111,26 @@
                 android:textSize="18sp" />
         </TableRow>
         <TableRow>
-            <Space/>
+            <TextView android:layout_weight="1"/>
             <Button
                 android:id="@+id/newGameBtn"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:background="@drawable/new_game_btn"
                 android:layout_marginTop="15dp"
-                android:layout_marginBottom="10dp"
                 android:text="@string/new_game"
+                android:textColor="#FFFFFF"
+                />
+            <TextView android:layout_weight="1"/>
+            <Button
+                android:id="@+id/resetFieldBtn"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/new_game_btn"
+                android:layout_marginTop="15dp"
+                android:text="@string/reset_field"
                 android:textColor="#FFFFFF" />
-            <Space/>
+            <TextView android:layout_weight="1"/>
         </TableRow>
     </TableLayout>
 

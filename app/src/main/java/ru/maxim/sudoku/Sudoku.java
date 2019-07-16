@@ -1,10 +1,7 @@
 package ru.maxim.sudoku;
 
-import android.util.Log;
-
 import com.google.gson.JsonArray;
 import com.google.gson.JsonParser;
-
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
