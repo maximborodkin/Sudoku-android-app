@@ -1,6 +1,8 @@
 package ru.maxim.sudoku;
 
 import android.content.Context;
+import android.support.v4.content.ContextCompat;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -60,12 +62,15 @@ public class SudokuListAdapter extends BaseAdapter {
             base.addView(row);
             for (int j = 0; j < 9; j++) {
                 cell = new TextView(ctx);
+                cell.setBackgroundResource(R.drawable.grid_button);
+                cell.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f);
+                cell.setPadding(2, 2, 2, 2);
                 if (sudoku.getOriginal_field()[i][j] != 0) {
                     cell.setText(String.valueOf(sudoku.getOriginal_field()[i][j]));
-                    cell.setBackgroundResource(R.drawable.unclickable_grid_button);
+                    cell.setTextColor(ContextCompat.getColor(ctx, R.color.originalDigitColor));
                 }else{
                     cell.setText((sudoku.getModyfied_field()[i][j] != 0)? String.valueOf(sudoku.getModyfied_field()[i][j]) : "");
-                    cell.setBackgroundResource(R.drawable.clickable_grid_button);
+                    cell.setTextColor(ContextCompat.getColor(ctx, R.color.modyfiedDigitColor));
                 }
                 row.addView(cell);
             }

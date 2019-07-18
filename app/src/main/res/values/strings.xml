@@ -32,4 +32,6 @@
     <string name="delete_all_fields">Delete all fields?</string>
     <string name="reset_field">Reset field</string>
     <string name="reset_this_field">Reset this field?</string>
+    <string name="save_this_field">Save this field?</string>
+    <string name="field_is_empty">This field is empty and can be deleted</string>
 </resources>

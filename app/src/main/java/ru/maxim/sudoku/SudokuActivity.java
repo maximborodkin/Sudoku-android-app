@@ -2,7 +2,6 @@ package ru.maxim.sudoku;
 
 import android.content.ContentValues;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.preference.PreferenceManager;
@@ -13,9 +12,9 @@ import android.support.v7.widget.Toolbar;
 import android.util.TypedValue;
 import android.view.View;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.TableLayout;
 import android.widget.TableRow;
-import android.widget.TextView;
 import android.widget.Toast;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -175,27 +174,33 @@ public class SudokuActivity extends AppCompatActivity implements View.OnClickLis
 
     private void setClickable(boolean clickable){
         TableLayout parent;
-        TableRow tr;
+        TableRow tableRow;
+        LinearLayout square, line;
         Button btn;
 
         parent= findViewById(R.id.parent_layout);
         for (int i = 0; i < parent.getChildCount(); i++) {
-            if (i !=3 && i !=7) {
-                tr = (TableRow) parent.getChildAt(i);
-                for (int j = 0; j < tr.getChildCount(); j++) {
-                    if (j != 3 && j!=7){
-                        btn = (Button) tr.getChildAt(j);
-                        if (!clickable) btn.setBackgroundResource(R.drawable.soluted_grid_button);
-                        btn.setClickable(clickable);
+            for (int j = 0; j < 3; j++) {
+                tableRow = (TableRow) parent.getChildAt(j);
+                for (int k = 0; k < 3; k++) {
+                    square = (LinearLayout) tableRow.getChildAt(k);
+                    for (int l = 0; l < 3; l++) {
+                        line = (LinearLayout) square.getChildAt(l);
+                        for (int m = 0; m < 3; m++) {
+                            btn = (Button) line.getChildAt(m);
+                            btn.setClickable(clickable);
+                            if (!clickable)
+                                btn.setBackgroundResource(R.drawable.soluted_grid_button);
+                        }
                     }
                 }
             }
         }
         parent = findViewById(R.id.digit_buttons);
-        for (int i = 0; i < parent.getChildCount()-2; i++) {
-            tr = (TableRow) parent.getChildAt(i);
-            for (int j = 0; j < tr.getChildCount(); j++) {
-                btn = (Button) tr.getChildAt(j);
+        for (int i = 0; i < 2; i++) {
+            tableRow = (TableRow) parent.getChildAt(i);
+            for (int j = 0; j < 5; j++) {
+                btn = (Button) tableRow.getChildAt(j);
                 btn.setClickable(clickable);
             }
         }
@@ -205,57 +210,62 @@ public class SudokuActivity extends AppCompatActivity implements View.OnClickLis
         TableLayout parent = findViewById(R.id.parent_layout);
         parent.removeAllViews();
         TableRow row;
+        LinearLayout square, line;
         Button btn;
         int[][] original_field = currentSudoku.getOriginal_field();
         int[][] modyfied_field = currentSudoku.getModyfied_field();
 
         for (int i = 0; i < 9; i++) {
+            for (int j = 0; j < 9; j++) {
+                System.out.print(modyfied_field[i][j] + " ");
+            }
+            System.out.println();
+        }
+
+        for (int i = 0; i < 3; i++) {
             row = new TableRow(this);
-            row.setId(200000+i);
             row.setLayoutParams(new TableLayout.LayoutParams(
                     TableLayout.LayoutParams.MATCH_PARENT,
                     TableLayout.LayoutParams.WRAP_CONTENT));
             parent.addView(row);
-            for (int j = 0; j < 9; j++) {
-                btn = new Button(this);
-                btn.setId(300000 + i*10 +j);
-                TableRow.LayoutParams params = new TableRow.LayoutParams(
+            for (int j = 0; j < 3; j++) {
+                square = new LinearLayout(this);
+                square.setLayoutParams(new TableRow.LayoutParams(
                         TableRow.LayoutParams.MATCH_PARENT,
-                        TableRow.LayoutParams.WRAP_CONTENT,
-                        1.0f);
-                btn.setLayoutParams(params);
-                if (original_field[i][j] != 0){
-                    btn.setText(String.valueOf(original_field[i][j]));
-                    btn.setBackgroundResource(R.drawable.unclickable_grid_button);
-                    btn.setClickable(false);
-                }else{
-                    btn.setText((modyfied_field[i][j] == 0)? "" : String.valueOf(modyfied_field[i][j]));
-                    btn.setBackgroundResource(R.drawable.clickable_grid_button);
-                    btn.setClickable(true);
-                    btn.setOnClickListener(this);
-                }
-                row.addView(btn);
-                if (j == 2 || j == 5){
-                    btn = new Button(this);
-                    btn.setLayoutParams(new TableRow.LayoutParams(
-                            TableRow.LayoutParams.MATCH_PARENT,
-                            TableRow.LayoutParams.WRAP_CONTENT,
-                            1.73f));
-                    btn.setClickable(false);
-                    btn.setBackgroundResource(R.drawable.vertical_spacer);
-                    row.addView(btn);
-                }
-            }
-            if (i == 2 || i == 5){
-                TableRow spacer = new TableRow(this);
-                spacer.setLayoutParams(new TableLayout.LayoutParams(
-                        TableLayout.LayoutParams.MATCH_PARENT,
-                        TableLayout.LayoutParams.WRAP_CONTENT,
+                        TableRow.LayoutParams.MATCH_PARENT,
                         1.0f));
-                TextView space = new TextView(this);
-                space.setTextSize(TypedValue.COMPLEX_UNIT_SP, 3);
-                spacer.addView(space);
-                parent.addView(spacer);
+                square.setOrientation(LinearLayout.VERTICAL);
+                square.setBackgroundResource(R.drawable.square_border);
+                row.addView(square);
+                for (int k = 0; k < 3; k++) {
+                    line = new LinearLayout(this);
+                    line.setLayoutParams(new LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.WRAP_CONTENT,
+                            LinearLayout.LayoutParams.MATCH_PARENT, 1));
+                    line.setOrientation(LinearLayout.HORIZONTAL);
+                    square.addView(line);
+                    for (int l = 0; l < 3; l++) {
+                        btn = new Button(this);
+                        btn.setId(300000 + (i*30+k*10) + j*3 + l);
+                        btn.setLayoutParams(new LinearLayout.LayoutParams(
+                                LinearLayout.LayoutParams.MATCH_PARENT,
+                                LinearLayout.LayoutParams.WRAP_CONTENT,
+                                1.0f));
+                        btn.setBackgroundResource(R.drawable.grid_button);
+                        btn.setTextSize(TypedValue.COMPLEX_UNIT_SP, 20f);
+                        if (original_field[i*3+k][j*3+l] != 0){
+                            btn.setText(String.valueOf(original_field[i*3+k][j*3+l]));
+                            btn.setTextColor(getResources().getColor(R.color.originalDigitColor));
+                            btn.setClickable(false);
+                        }else{
+                            btn.setText((modyfied_field[i*3+k][j*3+l] == 0)? "" : String.valueOf(modyfied_field[i*3+k][j*3+l]));
+                            btn.setTextColor(getResources().getColor(R.color.modyfiedDigitColor));
+                            btn.setClickable(true);
+                            btn.setOnClickListener(this);
+                        }
+                        line.addView(btn);
+                    }
+                }
             }
         }
     }
@@ -284,21 +294,13 @@ public class SudokuActivity extends AppCompatActivity implements View.OnClickLis
         // Highlight column
         for (int i = 0; i < 9; i++) {
             currentButton = findViewById(300000 + digit_j + i*10);
-            currentButton.setBackgroundResource(
-                    currentSudoku.getOriginal_field()[i][digit_j] !=0 ?
-                            R.drawable.unclickable_grid_button_highlighted :
-                            R.drawable.clickable_grid_button_highlighted
-            );
+            currentButton.setBackgroundResource(R.drawable.highlighted_grid_button);
         }
 
         // Highlight row
         for (int j = 0; j < 9; j++) {
             currentButton = findViewById(300000 + j + digit_i*10);
-            currentButton.setBackgroundResource(
-                    currentSudoku.getOriginal_field()[digit_i][j] !=0 ?
-                            R.drawable.unclickable_grid_button_highlighted :
-                            R.drawable.clickable_grid_button_highlighted
-            );
+            currentButton.setBackgroundResource(R.drawable.highlighted_grid_button);
         }
 
         //Highlight square
@@ -307,11 +309,7 @@ public class SudokuActivity extends AppCompatActivity implements View.OnClickLis
         for (int i = rowStart; i < rowStart+3; i++) {
             for (int j = colStart; j < colStart+3; j++) {
                 currentButton = findViewById(300000 + i*10 + j);
-                currentButton.setBackgroundResource(
-                        currentSudoku.getOriginal_field()[i][j] !=0 ?
-                                R.drawable.unclickable_grid_button_highlighted :
-                                R.drawable.clickable_grid_button_highlighted
-                );
+                currentButton.setBackgroundResource(R.drawable.highlighted_grid_button);
             }
         }
     }
@@ -322,20 +320,12 @@ public class SudokuActivity extends AppCompatActivity implements View.OnClickLis
         for (int i = 0; i < 9; i++) { //highlight
             currentButton = findViewById(300000 + digit_j + i*10);
             if (sudoku[i][digit_j] == digit)
-            currentButton.setBackgroundResource(
-                    currentSudoku.getOriginal_field()[i][digit_j] == 0 ?
-                            R.drawable.clickable_grid_button_matched :
-                            R.drawable.unclickable_grid_button_matched
-            );
+            currentButton.setBackgroundResource(R.drawable.mathced_grid_button);
         }
         for (int j = 0; j < 9; j++) {
             currentButton = findViewById(300000 + j + digit_i*10);
             if (sudoku[digit_i][j] == digit)
-            currentButton.setBackgroundResource(
-                    currentSudoku.getOriginal_field()[digit_i][j] == 0 ?
-                            R.drawable.clickable_grid_button_matched :
-                            R.drawable.unclickable_grid_button_matched
-            );
+            currentButton.setBackgroundResource(R.drawable.mathced_grid_button);
         }
 
         int rowStart = (digit_i/3)*3;
@@ -344,11 +334,7 @@ public class SudokuActivity extends AppCompatActivity implements View.OnClickLis
             for (int j = colStart; j < colStart+3; j++) {
                 currentButton = findViewById(300000 + i*10 + j);
                 if (sudoku[i][j] == digit)
-                currentButton.setBackgroundResource(
-                        currentSudoku.getOriginal_field()[i][j] == 0 ?
-                                R.drawable.clickable_grid_button_matched :
-                                R.drawable.unclickable_grid_button_matched
-                );
+                currentButton.setBackgroundResource(R.drawable.mathced_grid_button);
             }
         }
         currentBtn.setBackgroundResource(R.drawable.current_grid_button);
@@ -360,30 +346,18 @@ public class SudokuActivity extends AppCompatActivity implements View.OnClickLis
         Button currentButton;
         for (int i = 0; i < 9; i++) {
             currentButton = findViewById(300000 + digit_j + i*10);
-            currentButton.setBackgroundResource(
-                    currentSudoku.getOriginal_field()[i][digit_j] !=0 ?
-                            R.drawable.unclickable_grid_button :
-                            R.drawable.clickable_grid_button
-            );
+            currentButton.setBackgroundResource(R.drawable.grid_button);
         }
         for (int j = 0; j < 9; j++) {
             currentButton = findViewById(300000 + j + digit_i*10);
-            currentButton.setBackgroundResource(
-                    currentSudoku.getOriginal_field()[digit_i][j] != 0 ?
-                            R.drawable.unclickable_grid_button :
-                            R.drawable.clickable_grid_button
-            );
+            currentButton.setBackgroundResource(R.drawable.grid_button);
         }
         int rowStart = (digit_i/3)*3;
         int colStart = (digit_j/3)*3;
         for (int i = rowStart; i < rowStart+3; i++) {
             for (int j = colStart; j < colStart+3; j++) {
                 currentButton = findViewById(300000 + i*10 + j);
-                currentButton.setBackgroundResource(
-                        currentSudoku.getOriginal_field()[i][j] !=0 ?
-                                R.drawable.unclickable_grid_button :
-                                R.drawable.clickable_grid_button
-                );
+                currentButton.setBackgroundResource(R.drawable.grid_button);
             }
         }
     }
@@ -519,7 +493,7 @@ public class SudokuActivity extends AppCompatActivity implements View.OnClickLis
                 break;
             default:
                 if (currentBtn != null){
-                    currentBtn.setBackgroundResource(R.drawable.clickable_grid_button);
+                    currentBtn.setBackgroundResource(R.drawable.grid_button);
                     if (isHighlightEnabled || isHelpEnabled) removeHighlight();
                 }
                 currentBtn = findViewById(v.getId());

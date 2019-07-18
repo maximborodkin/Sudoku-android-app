@@ -46,8 +46,6 @@ public class Sudoku {
         return modyfied_field;
     }
 
-
-
     void setModyfied_field(int[][] modyfied_field) {
         this.modyfied_field = modyfied_field;
     }

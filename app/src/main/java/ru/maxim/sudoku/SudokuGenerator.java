@@ -1,11 +1,10 @@
 package ru.maxim.sudoku;
 
 class SudokuGenerator {
-
-    private int[] mat[];
-    private final int N = 9;
+    private int[][] mat;
     private final int SRN = 3;
     private int K;
+    private final int N = 9;
 
     SudokuGenerator(int spacesCount) {
         this.K = spacesCount;
@@ -45,11 +44,11 @@ class SudokuGenerator {
             }
         }
     }
-
+//
     private int randomGenerator(int num) {
         return (int) Math.floor((Math.random()*num+1));
     }
-
+//
     private boolean CheckIfSafe(int i, int j, int num) {
         return (unUsedInRow(i, num) &&
                 unUsedInCol(j, num) &&
@@ -123,7 +122,7 @@ class SudokuGenerator {
         }
     }
 
-    int[][] getSudoku(){
+    int[][] getSudoku() {
         fillValues();
         removeKDigits();
         return mat;

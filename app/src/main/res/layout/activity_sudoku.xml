@@ -11,10 +11,10 @@
     </android.support.v7.widget.Toolbar>
 
     <TableLayout
-        android:background="#2B2B2B"
         android:id="@+id/parent_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
+
     </TableLayout>
 
     <TableLayout

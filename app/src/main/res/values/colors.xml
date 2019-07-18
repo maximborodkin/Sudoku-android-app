@@ -1,6 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#008577</color>
-    <color name="colorPrimaryDark">#00574B</color>
-    <color name="colorAccent">#D81B60</color>
+    <!--Interface colors-->
+    <color name="colorPrimary">#2196F3</color>
+    <color name="colorPrimaryDark">#0269BB</color>
+    <color name="colorAccent">#C325DF</color>
+
+    <!--Sudoku grid colors-->
+    <color name="gridButtonColor">#DDDDDD</color>
+    <color name="highlightedGridButtonColor">#A7BDE2</color>
+    <color name="currentGrigButtonColor">#609BD3</color>
+    <color name="mathedGridButtonColor">#CF8383</color>
+    <color name="solutedGridButtonColor">#56CF81</color>
+
+    <color name="originalDigitColor">#000000</color>
+    <color name="modyfiedDigitColor">#835B0B</color>
 </resources>

@@ -73,7 +73,7 @@ public class ListActivity extends AppCompatActivity {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         db.delete(SudokuContract.SudokuEntry.TABLE_NAME, null, null);
-                        fillList();
+                        startActivity(new Intent(ListActivity.this, MainActivity.class));
                     }
                 }).setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
                     @Override
